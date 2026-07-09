@@ -79,6 +79,47 @@ textarea.fld{resize:vertical;min-height:150px;line-height:1.6;font-size:13.5px}
 .cc{text-align:right;font-size:10.5px;color:var(--mut2);margin:-9px 0 12px}
 .cc.warn{color:var(--warn);font-weight:600}
 
+/* ============ MICRO / GIỌNG NÓI ============ */
+.vwrap{position:relative}
+.vwrap .fld{padding-right:48px}
+.vwrap textarea.fld{padding-right:14px;padding-bottom:46px}
+.mic{
+  position:absolute;right:8px;top:8px;width:34px;height:34px;border-radius:9px;
+  border:1.5px solid var(--line);background:#fff;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:.18s;
+  -webkit-tap-highlight-color:transparent;touch-action:manipulation;
+}
+.vwrap textarea.fld ~ .mic{top:auto;bottom:22px;right:10px}
+.mic svg{width:17px;height:17px;fill:none;stroke:var(--pri);stroke-width:1.9;
+  stroke-linecap:round;stroke-linejoin:round}
+.mic:hover{background:#eefafd;border-color:var(--acc)}
+.mic:active{transform:scale(.93)}
+.mic.on{background:#fee2e2;border-color:#fca5a5;animation:micp 1.5s infinite}
+.mic.on svg{stroke:var(--dgr)}
+.mic.off{opacity:.35;cursor:not-allowed}
+@keyframes micp{0%{box-shadow:0 0 0 0 rgba(220,38,38,.42)}70%{box-shadow:0 0 0 9px rgba(220,38,38,0)}100%{box-shadow:0 0 0 0 rgba(220,38,38,0)}}
+
+.vpanel{display:none;background:linear-gradient(135deg,#fff7f7,#fef2f2);
+  border:1.5px solid #fecaca;border-radius:11px;padding:11px 12px;margin-bottom:13px}
+.vpanel.on{display:block;animation:vin .2s ease}
+@keyframes vin{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:none}}
+.vhd{display:flex;align-items:center;gap:9px;margin-bottom:8px}
+.vst{font-size:11.5px;font-weight:700;color:var(--dgr);flex:1;letter-spacing:.2px}
+.vstop{background:var(--dgr);color:#fff;border:none;border-radius:7px;
+  padding:5px 12px;font-size:11px;font-weight:600;cursor:pointer;flex-shrink:0}
+.vstop:active{transform:scale(.95)}
+.wave{display:flex;align-items:center;gap:2.5px;height:18px;flex-shrink:0}
+.wave i{width:2.5px;border-radius:2px;background:var(--dgr);height:5px;animation:wv .9s infinite ease-in-out}
+.wave i:nth-child(2){animation-delay:.12s}.wave i:nth-child(3){animation-delay:.24s}
+.wave i:nth-child(4){animation-delay:.36s}.wave i:nth-child(5){animation-delay:.48s}
+@keyframes wv{0%,100%{height:5px;opacity:.5}50%{height:17px;opacity:1}}
+.vlive{font-size:12.5px;line-height:1.6;color:var(--txt);min-height:36px;
+  max-height:110px;overflow-y:auto;background:#fff;border-radius:8px;padding:8px 10px;
+  border:1px solid #fee2e2;word-break:break-word}
+.vlive .vfin{color:var(--txt)}
+.vlive .vint{color:var(--mut2);font-style:italic}
+.vlive .vhint{color:var(--mut2);font-size:11.5px}
+
 .btn{border:none;border-radius:10px;padding:10px 16px;font-size:12.5px;font-weight:600;
   cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:6px;justify-content:center}
 .btn:disabled{opacity:.45;cursor:not-allowed}
@@ -158,6 +199,66 @@ mark{background:#fef08a;padding:0 2px;border-radius:2px}
   padding-top:10px;border-top:1px dashed var(--line)}
 footer{text-align:center;font-size:10.5px;letter-spacing:.7px;font-weight:600;
   color:var(--mut2);padding:22px 0 8px}
+
+/* ================= TỐI ƯU MOBILE ================= */
+@media(max-width:640px){
+  body{font-size:15px;padding-bottom:20px}
+  header{padding:13px 14px}
+  .hd{gap:10px}
+  .logo{width:38px;height:38px;font-size:18px;border-radius:11px}
+  .hd h1{font-size:13.5px}
+  .hd .sub{display:none}
+  .led{padding:5px 10px;font-size:10.5px;order:3}
+  .hbtn{padding:7px 11px;font-size:11.5px;order:4}
+  main{margin:12px auto;padding:0 11px;gap:12px}
+  .card{padding:14px;border-radius:13px;margin-bottom:12px}
+  .card h3{font-size:11px;margin-bottom:11px}
+
+  /* font-size >=16px để iOS/Android không tự zoom khi focus */
+  .fld{font-size:16px;padding:11px 13px;border-radius:11px}
+  textarea.fld{min-height:170px;font-size:15px}
+  .vwrap .fld{padding-right:52px}
+
+  /* Nút bấm to hơn cho ngón tay (>=44px) */
+  .mic{width:40px;height:40px;right:6px;top:5px}
+  .mic svg{width:19px;height:19px}
+  .vwrap textarea.fld ~ .mic{bottom:20px;right:8px}
+  .btn{padding:13px 16px;font-size:13.5px;border-radius:11px}
+  .btn.sm{padding:9px 12px;font-size:12px}
+  .row{gap:7px}
+  .row .btn{flex:1;min-width:0}
+
+  .st{gap:6px}
+  .st div{padding:9px 5px}
+  .st b{font-size:16.5px}
+  .st span{font-size:8.8px;letter-spacing:0}
+
+  .tb{gap:7px}
+  .srch{min-width:100%}
+  select.fld{width:100%;margin:0}
+
+  .item{padding:12px;border-radius:11px}
+  .item .hd2{flex-direction:column;gap:3px}
+  .item .t{font-size:13.5px}
+  .item .meta{padding-top:0;font-size:10px}
+  .item .ac{gap:5px}
+  .item .ac .btn{flex:1 1 auto;min-width:70px}
+
+  .lbox{padding:30px 22px;border-radius:17px}
+  .modal{padding:20px;border-radius:14px}
+  .modal .row .btn{flex:1}
+  .toast{bottom:14px;font-size:12px;padding:10px 16px;width:auto}
+  .vlive{max-height:90px;font-size:13.5px}
+  .vpanel{padding:10px}
+}
+
+/* Chống giật khi bàn phím ảo bật lên */
+@media(max-width:900px){ .sticky{position:static!important} }
+/* Vùng an toàn cho máy có tai thỏ */
+@supports(padding:max(0px)){
+  header{padding-left:max(14px,env(safe-area-inset-left));padding-right:max(14px,env(safe-area-inset-right))}
+  body{padding-bottom:max(20px,env(safe-area-inset-bottom))}
+}
 </style>
 </head>
 <body>
@@ -198,10 +299,30 @@ footer{text-align:center;font-size:10.5px;letter-spacing:.7px;font-weight:600;
       <div class="edt hide" id="editBadge">✏️ Đang sửa: <b id="editName"></b></div>
 
       <label>Tiêu đề <span style="color:var(--dgr)">*</span></label>
-      <input class="fld" id="fTitle" placeholder="VD: Chính sách chiết khấu chuỗi nhà thuốc">
+      <div class="vwrap">
+        <input class="fld" id="fTitle" placeholder="VD: Chính sách chiết khấu chuỗi nhà thuốc">
+        <button class="mic" id="micTitle" data-target="fTitle" title="Bấm để đọc tiêu đề" aria-label="Nhập bằng giọng nói">
+          <svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 003-3V6a3 3 0 00-6 0v5a3 3 0 003 3z"/><path d="M18 11a6 6 0 01-12 0M12 17v4M8.5 21h7"/></svg>
+        </button>
+      </div>
 
       <label>Nội dung chi tiết <span style="color:var(--dgr)">*</span></label>
-      <textarea class="fld" id="fContent" placeholder="Nhập đầy đủ quy định, quy trình, số liệu…&#10;&#10;Trợ lý Huyền sẽ dò từ khóa trong Tiêu đề để tra cứu, nên hãy đặt tiêu đề chứa từ khóa người dùng hay hỏi."></textarea>
+      <div class="vwrap">
+        <textarea class="fld" id="fContent" placeholder="Nhập đầy đủ quy định, quy trình, số liệu…&#10;&#10;Hoặc bấm nút micro để đọc bằng giọng nói.&#10;&#10;Trợ lý Huyền sẽ dò từ khóa trong Tiêu đề để tra cứu."></textarea>
+        <button class="mic" id="micContent" data-target="fContent" title="Bấm để đọc nội dung" aria-label="Nhập bằng giọng nói">
+          <svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 003-3V6a3 3 0 00-6 0v5a3 3 0 003 3z"/><path d="M18 11a6 6 0 01-12 0M12 17v4M8.5 21h7"/></svg>
+        </button>
+      </div>
+
+      <!-- Bảng điều khiển giọng nói -->
+      <div class="vpanel" id="vpanel">
+        <div class="vhd">
+          <span class="wave"><i></i><i></i><i></i><i></i><i></i></span>
+          <span class="vst" id="vst">Đang nghe…</span>
+          <button class="vstop" id="vstop">■ Dừng</button>
+        </div>
+        <div class="vlive" id="vlive"><span class="vhint">Hãy nói, chữ sẽ hiện ở đây…</span></div>
+      </div>
       <div class="cc" id="cc">0 ký tự</div>
 
       <div class="row">
@@ -210,6 +331,8 @@ footer{text-align:center;font-size:10.5px;letter-spacing:.7px;font-weight:600;
       </div>
 
       <div class="note">
+        🎙 Bấm nút micro để nhập bằng giọng nói (tiếng Việt). Nói xong bấm <b>Dừng</b>,
+        chữ sẽ được chốt vào ô. Hỗ trợ tốt nhất trên Chrome.<br><br>
         Dữ liệu ghi trực tiếp vào Firebase Realtime Database, node
         <b id="nodeName"></b>. Trợ lý Huyền trên website và ứng dụng AI Studio
         sẽ nhận cập nhật <b>ngay tức thì</b>, không cần tải lại trang.
@@ -445,6 +568,7 @@ $('fContent').addEventListener('input', () => {
 });
 
 function resetForm(){
+  if (typeof V !== 'undefined' && V.running) vStop(true);
   editingId = null;
   $('fTitle').value = ''; $('fContent').value = '';
   $('cc').textContent = '0 ký tự'; $('cc').className = 'cc';
@@ -474,6 +598,7 @@ function startEdit(id){
 }
 
 $('saveBtn').onclick = () => {
+  if (V.running) vStop(true);
   const t = $('fTitle').value.trim();
   const c = $('fContent').value.trim();
   if (!t)  { toast('Vui lòng nhập Tiêu đề', 'err'); $('fTitle').focus(); return; }
@@ -664,6 +789,239 @@ $('expXlsxBtn').onclick = () => {
   XLSX.writeFile(wb, `ideco-kho-tri-thuc-${stamp}.xlsx`);
   toast('Đã xuất file Excel', 'ok');
 };
+
+
+/* ============================================================
+   NHẬN DẠNG GIỌNG NÓI (Web Speech API)
+   ------------------------------------------------------------
+   Vấn đề trên Chrome Android: khi continuous=true, mỗi lần engine
+   tự khởi động lại phiên (sau khoảng lặng) thì resultIndex bị reset
+   về 0, khiến các kết quả isFinal cũ được bắn lại → CÂU BỊ TRÙNG.
+
+   Cách xử lý ở đây:
+   1. ANCHOR: chốt nội dung ô nhập tại thời điểm bắt đầu nói.
+      Mọi lần render đều = anchor + finalText + interimText.
+      Không bao giờ dùng "+=" trực tiếp vào ô nhập.
+   2. finalText chỉ được cộng thêm trong 1 phiên onresult, và mỗi
+      phiên chỉ duyệt từ e.resultIndex trở đi.
+   3. Khi engine tự restart (onend mà chưa bấm dừng), ta ĐẨY
+      finalText vào anchor rồi RESET finalText = '' → phiên mới
+      bắt đầu từ số 0, không thể bắn lại câu cũ.
+   4. Chống trùng lần cuối: nếu chuỗi mới trùng khít phần đuôi của
+      chuỗi đã có (dedupeAppend) thì bỏ qua.
+   ============================================================ */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+const V = {
+  rec: null,
+  target: null,       // element đang nhận text
+  anchor: '',         // nội dung ô nhập trước khi nói
+  finalText: '',      // phần final của PHIÊN hiện tại
+  interim: '',        // phần tạm (chưa chốt)
+  running: false,     // người dùng đang muốn ghi âm?
+  stopping: false,    // đang trong quá trình dừng (chống onend chạy lại vStop)
+  restarting: false,
+  lastFinal: '',      // chống bắn trùng ngay trong 1 phiên
+  lastAt: 0
+};
+
+/* Ghép chuỗi, bỏ qua nếu 'add' đã nằm ở đuôi 'base' */
+function dedupeAppend(base, add){
+  const a = base.trim(), b = add.trim();
+  if (!b) return a;
+  if (!a) return b;
+  // b đã là đuôi của a → bỏ
+  if (a.toLowerCase().endsWith(b.toLowerCase())) return a;
+  // chồng lấn một phần: tìm độ chồng dài nhất
+  const max = Math.min(a.length, b.length);
+  for (let n = max; n >= 6; n--){
+    if (a.slice(-n).toLowerCase() === b.slice(0, n).toLowerCase())
+      return a + b.slice(n);
+  }
+  return a + (/[.!?…]$/.test(a) ? ' ' : (a.endsWith(',') ? ' ' : ' ')) + b;
+}
+
+/* Chuẩn hóa câu: viết hoa đầu câu, bỏ khoảng trắng thừa */
+function tidy(t){
+  return t.replace(/\s+/g,' ').replace(/\s+([,.!?;:])/g,'$1').trim();
+}
+
+/* Chốt toàn bộ text đang có vào ô nhập. Gọi được nhiều lần vẫn an toàn. */
+function vCommit(){
+  if (!V.target) return;
+  V.anchor = dedupeAppend(V.anchor, tidy(V.finalText));
+  if (V.interim) V.anchor = dedupeAppend(V.anchor, tidy(V.interim));
+  V.finalText = ''; V.interim = ''; V.lastFinal = '';
+  V.target.value = V.anchor;
+  if (V.target.id === 'fContent') V.target.dispatchEvent(new Event('input'));
+}
+
+function vRender(){
+  if (!V.target) return;
+  const merged = dedupeAppend(V.anchor, tidy(V.finalText));
+  const full = V.interim ? dedupeAppend(merged, tidy(V.interim)) : merged;
+  V.target.value = full;
+  if (V.target.id === 'fContent') V.target.dispatchEvent(new Event('input'));
+
+  const live = $('vlive');
+  if (!V.finalText && !V.interim){
+    live.innerHTML = '<span class="vhint">Hãy nói, chữ sẽ hiện ở đây…</span>';
+  } else {
+    live.innerHTML = `<span class="vfin">${esc(tidy(V.finalText))}</span> <span class="vint">${esc(tidy(V.interim))}</span>`;
+    live.scrollTop = live.scrollHeight;
+  }
+}
+
+function vSetBtn(on){
+  document.querySelectorAll('.mic').forEach(b => b.classList.remove('on'));
+  if (on && V.target){
+    const b = document.querySelector(`.mic[data-target="${V.target.id}"]`);
+    if (b) b.classList.add('on');
+  }
+  $('vpanel').classList.toggle('on', !!on);
+}
+
+function vBuild(){
+  const r = new SR();
+  r.lang = 'vi-VN';
+  r.interimResults = true;
+  r.maxAlternatives = 1;
+  // Trên mobile để continuous=false: engine tự dừng sau mỗi câu,
+  // ta chủ động restart => tránh hoàn toàn lỗi resultIndex reset.
+  r.continuous = !isMobile;
+
+  r.onstart = () => { $('vst').textContent = 'Đang nghe…'; };
+
+  r.onresult = (e) => {
+    if (V.stopping || !V.target) return;   // đang dừng: bỏ mọi kết quả muộn
+    let interim = '';
+    for (let i = e.resultIndex; i < e.results.length; i++){
+      const res = e.results[i];
+      const txt = res[0].transcript;
+      if (res.isFinal){
+        const clean = tidy(txt);
+        const now = Date.now();
+        // Bỏ qua nếu engine bắn lại đúng câu vừa chốt trong 1.5s
+        if (clean && !(clean === V.lastFinal && now - V.lastAt < 1500)){
+          V.finalText = dedupeAppend(V.finalText, clean);
+          V.lastFinal = clean; V.lastAt = now;
+        }
+      } else {
+        interim += txt;
+      }
+    }
+    V.interim = interim;
+    vRender();
+  };
+
+  r.onerror = (e) => {
+    if (e.error === 'no-speech') return;                 // im lặng, cứ chờ
+    if (e.error === 'aborted') return;                   // do ta chủ động dừng
+    if (e.error === 'not-allowed' || e.error === 'service-not-allowed'){
+      V.running = false; vStop(true);
+      toast('Trình duyệt chặn micro. Hãy cấp quyền micro cho trang này.', 'err');
+      return;
+    }
+    if (e.error === 'network'){ $('vst').textContent = 'Lỗi mạng, đang thử lại…'; return; }
+    $('vst').textContent = 'Lỗi: ' + e.error;
+  };
+
+  r.onend = () => {
+    // Người dùng đã bấm Dừng -> vStop() lo phần chốt chữ, onend KHÔNG đụng vào.
+    if (V.stopping || !V.running) return;
+
+    // === MẤU CHỐT CHỐNG TRÙNG (engine tự restart giữa chừng) ===
+    // Đẩy phần đã chốt vào anchor, reset phiên -> phiên mới bắt đầu sạch
+    V.anchor = dedupeAppend(V.anchor, tidy(V.finalText));
+    V.finalText = ''; V.interim = ''; V.lastFinal = '';
+    vRender();
+
+    if (V.restarting) return;
+    V.restarting = true;
+    $('vst').textContent = 'Đang nghe…';
+    setTimeout(() => {
+      V.restarting = false;
+      if (!V.running || V.stopping) return;
+      try { V.rec.start(); }
+      catch(err){ setTimeout(()=>{ try{ (V.running && !V.stopping) && V.rec.start(); }catch(_){} }, 260); }
+    }, isMobile ? 220 : 90);
+  };
+
+  return r;
+}
+
+function vStart(el){
+  if (!SR){ toast('Trình duyệt không hỗ trợ nhập giọng nói. Hãy dùng Chrome.', 'err'); return; }
+  if (V.running && V.target === el){ vStop(); return; }   // bấm lại = tắt
+  if (V.running) vStop();                                  // đang ghi ô khác
+
+  V.target = el;
+  V.anchor = el.value;                                     // CHỐT NỘI DUNG CŨ
+  V.finalText = ''; V.interim = ''; V.lastFinal = ''; V.lastAt = 0;
+  V.running = true; V.stopping = false; V.restarting = false;
+  V.rec = vBuild();
+  vSetBtn(true);
+  vRender();
+
+  try { V.rec.start(); }
+  catch(e){ V.running = false; V.stopping = false; vSetBtn(false); toast('Không khởi động được micro', 'err'); return; }
+
+  if (navigator.vibrate) try { navigator.vibrate(18); } catch(e){}
+  toast('🎙 Đang nghe — bấm Dừng khi xong', 'ok');
+}
+
+function vStop(silent){
+  if (V.stopping) return;          // đã đang dừng, tránh chạy 2 lần
+  const wasRunning = V.running;
+  if (!wasRunning && !V.target) return;
+
+  V.stopping = true;               // chặn onend can thiệp
+  V.running  = false;
+
+  // ===== BƯỚC 1: CHỐT CHỮ VÀO Ô NHẬP TRƯỚC TIÊN =====
+  // (làm trước rec.stop() để không bao giờ mất text do onend chạy xen vào)
+  const el = V.target;
+  vCommit();
+  const savedText = el ? el.value : '';
+
+  // ===== BƯỚC 2: mới dừng engine =====
+  try { V.rec && V.rec.abort(); } catch(e){}
+  try { V.rec && V.rec.stop();  } catch(e){}
+
+  // ===== BƯỚC 3: dọn giao diện =====
+  vSetBtn(false);
+  $('vlive').innerHTML = '<span class="vhint">Hãy nói, chữ sẽ hiện ở đây…</span>';
+
+  if (wasRunning && !silent){
+    if (navigator.vibrate) try { navigator.vibrate([12,50,12]); } catch(e){}
+    const n = savedText.trim().length;
+    toast(n ? `✅ Đã lưu ${n.toLocaleString('vi-VN')} ký tự vào ô nhập` : 'Đã dừng ghi âm', 'ok');
+  }
+
+  // ===== BƯỚC 4: giải phóng sau khi engine nhả xong =====
+  // Giữ V.target thêm một nhịp để onend/onresult muộn không ghi đè nhầm.
+  setTimeout(() => {
+    V.rec = null; V.target = null;
+    V.anchor = ''; V.finalText = ''; V.interim = ''; V.lastFinal = '';
+    V.stopping = false;
+  }, 350);
+}
+
+/* --- Gắn sự kiện --- */
+document.querySelectorAll('.mic').forEach(btn => {
+  if (!SR){ btn.classList.add('off'); btn.title = 'Trình duyệt không hỗ trợ giọng nói'; }
+  btn.addEventListener('click', e => {
+    e.preventDefault();
+    if (!SR) { toast('Hãy dùng Chrome để nhập bằng giọng nói', 'err'); return; }
+    vStart($(btn.dataset.target));
+  });
+});
+$('vstop').onclick = () => vStop();
+
+/* Dừng ghi âm khi rời trang / chuyển tab / lưu / hủy */
+window.addEventListener('pagehide', () => vStop(true));
+document.addEventListener('visibilitychange', () => { if (document.hidden && V.running) vStop(true); });
 
 /* ============================================================
    PHÍM TẮT & TỰ ĐĂNG NHẬP
