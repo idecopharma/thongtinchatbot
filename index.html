@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>IDECO • Quản Trị Kho Tri Thức AI</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧠</text></svg>">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --pri:#0e7490; --acc:#06b6d4; --pri-d:#0b5c72;
+  --bg:#eef5f8; --card:#fff; --line:#dde9ee; --line2:#eef4f7;
+  --txt:#0f172a; --mut:#64748b; --mut2:#94a3b8;
+  --ok:#16a34a; --warn:#d97706; --dgr:#b91c1c;
+  --sh:0 1px 3px rgba(15,23,42,.06),0 6px 20px rgba(15,23,42,.05);
+  --r:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  background:var(--bg);color:var(--txt);font-size:14px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;padding-bottom:40px;
+}
+button,input,textarea,select{font-family:inherit;font-size:inherit}
+.hide{display:none!important}
+
+/* ================= HEADER ================= */
+header{
+  background:linear-gradient(135deg,var(--pri),var(--acc));
+  color:#fff;padding:20px 22px;position:sticky;top:0;z-index:50;
+  box-shadow:0 3px 16px rgba(6,182,212,.28);
+}
+.hd{max-width:1180px;margin:0 auto;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.logo{width:46px;height:46px;border-radius:13px;background:rgba(255,255,255,.2);
+  border:2px solid rgba(255,255,255,.42);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.hd h1{font-size:16.5px;font-weight:700;letter-spacing:.3px}
+.hd .sub{font-size:11.5px;opacity:.92;margin-top:1px}
+.hd .sp{flex:1}
+.led{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.16);
+  border-radius:20px;padding:6px 13px;font-size:11.5px;font-weight:600;white-space:nowrap}
+.led .d{width:8px;height:8px;border-radius:50%;background:#facc15;flex-shrink:0}
+.led.on .d{background:#4ade80;box-shadow:0 0 0 0 rgba(74,222,128,.7);animation:pl 2s infinite}
+.led.off .d{background:#f87171}
+@keyframes pl{70%{box-shadow:0 0 0 7px rgba(74,222,128,0)}100%{box-shadow:0 0 0 0 rgba(74,222,128,0)}}
+.hbtn{background:rgba(255,255,255,.16);border:none;color:#fff;border-radius:9px;
+  padding:8px 13px;font-size:12px;font-weight:600;cursor:pointer;transition:.15s}
+.hbtn:hover{background:rgba(255,255,255,.3)}
+
+/* ================= LOGIN ================= */
+#login{min-height:88vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.lbox{background:var(--card);border-radius:20px;box-shadow:var(--sh);padding:38px 32px;max-width:390px;width:100%;text-align:center}
+.lbox .em{font-size:46px;margin-bottom:10px}
+.lbox h2{font-size:18px;margin-bottom:5px}
+.lbox p{color:var(--mut);font-size:12.5px;margin-bottom:22px}
+.lerr{background:#fef2f2;color:var(--dgr);border:1px solid #fecaca;border-radius:9px;
+  padding:9px;font-size:12px;margin-bottom:12px;display:none}
+.lerr.show{display:block}
+.chk{display:flex;align-items:center;gap:8px;justify-content:center;margin:14px 0 18px;font-size:12.5px;color:var(--mut)}
+.chk input{width:16px;height:16px;accent-color:var(--pri);cursor:pointer}
+
+/* ================= LAYOUT ================= */
+main{max-width:1180px;margin:22px auto;padding:0 18px;display:grid;grid-template-columns:400px 1fr;gap:18px;align-items:start}
+@media(max-width:900px){main{grid-template-columns:1fr}}
+
+.card{background:var(--card);border-radius:var(--r);box-shadow:var(--sh);padding:18px;margin-bottom:18px}
+.card h3{font-size:12px;font-weight:700;color:var(--pri);letter-spacing:.6px;
+  text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:7px}
+.card h3 .cnt{margin-left:auto;background:var(--bg);color:var(--mut);
+  padding:2px 9px;border-radius:11px;font-size:10.5px;letter-spacing:0}
+.sticky{position:sticky;top:96px}
+@media(max-width:900px){.sticky{position:static}}
+
+/* ================= FORM ================= */
+label{display:block;font-size:11px;font-weight:600;color:var(--mut);margin-bottom:5px;letter-spacing:.2px}
+.fld{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;
+  outline:none;color:var(--txt);background:#fff;margin-bottom:13px;transition:.15s}
+.fld:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(6,182,212,.11)}
+textarea.fld{resize:vertical;min-height:150px;line-height:1.6;font-size:13.5px}
+.cc{text-align:right;font-size:10.5px;color:var(--mut2);margin:-9px 0 12px}
+.cc.warn{color:var(--warn);font-weight:600}
+
+.btn{border:none;border-radius:10px;padding:10px 16px;font-size:12.5px;font-weight:600;
+  cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:6px;justify-content:center}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.pri{background:linear-gradient(135deg,var(--pri),var(--acc));color:#fff;box-shadow:0 2px 8px rgba(6,182,212,.3)}
+.btn.pri:hover:not(:disabled){filter:brightness(1.09);transform:translateY(-1px)}
+.btn.gh{background:#fff;border:1.5px solid var(--line);color:var(--pri-d)}
+.btn.gh:hover:not(:disabled){background:#f2fafc;border-color:var(--acc)}
+.btn.dg{background:#fef2f2;border:1.5px solid #fecaca;color:var(--dgr)}
+.btn.dg:hover:not(:disabled){background:#fee2e2}
+.btn.sm{padding:6px 11px;font-size:11px;border-radius:8px}
+.btn.full{width:100%}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+input[type=file]{display:none}
+
+.edt{background:linear-gradient(135deg,#fffbeb,#fef9c3);border:1.5px solid #fde68a;
+  border-radius:10px;padding:9px 12px;font-size:11.5px;color:#78350f;margin-bottom:13px;
+  display:flex;align-items:center;gap:8px}
+.edt b{font-weight:700}
+
+/* ================= TOOLBAR ================= */
+.tb{display:flex;gap:9px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+.srch{flex:1;min-width:190px;position:relative}
+.srch input{width:100%;border:1.5px solid var(--line);border-radius:10px;
+  padding:9px 12px 9px 34px;outline:none;background:#fff;transition:.15s}
+.srch input:focus{border-color:var(--acc)}
+.srch .ic{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--mut2);font-size:13px}
+select.fld{margin:0;width:auto;padding:9px 11px;cursor:pointer}
+
+/* ================= LIST ================= */
+.item{border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:11px;
+  background:#fff;transition:.15s}
+.item:hover{border-color:var(--acc);box-shadow:0 3px 12px rgba(6,182,212,.11)}
+.item.act{border-color:var(--acc);background:#f5fcfe;box-shadow:0 0 0 3px rgba(6,182,212,.1)}
+.item .hd2{display:flex;align-items:flex-start;gap:9px;margin-bottom:7px}
+.item .t{font-size:13.5px;font-weight:700;flex:1;word-break:break-word}
+.item .meta{font-size:10.5px;color:var(--mut2);white-space:nowrap;padding-top:3px}
+.item .c{font-size:12.5px;color:var(--mut);line-height:1.6;white-space:pre-wrap;
+  word-break:break-word;max-height:70px;overflow:hidden;position:relative}
+.item .c.open{max-height:none}
+.item .c:not(.open):after{content:'';position:absolute;left:0;right:0;bottom:0;height:26px;
+  background:linear-gradient(transparent,#fff)}
+.item.act .c:not(.open):after{background:linear-gradient(transparent,#f5fcfe)}
+.item .ac{display:flex;gap:6px;margin-top:11px;flex-wrap:wrap}
+mark{background:#fef08a;padding:0 2px;border-radius:2px}
+
+.empty{text-align:center;padding:52px 20px;color:var(--mut2)}
+.empty .em{font-size:44px;margin-bottom:10px;opacity:.55}
+.empty p{font-size:13px}
+
+/* ================= MISC ================= */
+.bar{height:5px;background:var(--line2);border-radius:3px;overflow:hidden;margin-top:9px}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--pri),var(--acc));
+  border-radius:3px;transition:width .3s}
+.st{display:flex;gap:9px;margin-bottom:14px}
+.st div{flex:1;background:var(--bg);border-radius:10px;padding:11px;text-align:center}
+.st b{display:block;font-size:19px;color:var(--pri);font-weight:700;line-height:1.2}
+.st span{font-size:10px;color:var(--mut);letter-spacing:.2px}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);
+  background:var(--txt);color:#fff;padding:11px 20px;border-radius:26px;font-size:12.5px;
+  font-weight:500;box-shadow:0 8px 26px rgba(0,0,0,.28);opacity:0;transition:.3s;z-index:200;
+  display:flex;align-items:center;gap:8px;max-width:90vw}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.ok{background:#065f46}.toast.err{background:#7f1d1d}
+
+.mask{position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:150;
+  display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(2px)}
+.mask.show{display:flex}
+.modal{background:#fff;border-radius:16px;padding:24px;max-width:400px;width:100%;
+  box-shadow:0 20px 50px rgba(0,0,0,.3)}
+.modal .em{font-size:36px;text-align:center;margin-bottom:8px}
+.modal h4{font-size:15.5px;margin-bottom:6px;text-align:center}
+.modal p{font-size:12.5px;color:var(--mut);margin-bottom:18px;text-align:center;line-height:1.6}
+.modal .row{justify-content:center}
+
+.note{font-size:10.5px;color:var(--mut2);line-height:1.6;margin-top:10px;
+  padding-top:10px;border-top:1px dashed var(--line)}
+footer{text-align:center;font-size:10.5px;letter-spacing:.7px;font-weight:600;
+  color:var(--mut2);padding:22px 0 8px}
+</style>
+</head>
+<body>
+
+<!-- ==================== ĐĂNG NHẬP ==================== -->
+<div id="login">
+  <div class="lbox">
+    <div class="em">🧠</div>
+    <h2>QUẢN TRỊ KHO TRI THỨC</h2>
+    <p>Hệ thống AI IDECO Pharma</p>
+    <div class="lerr" id="lerr">Mật khẩu không đúng, vui lòng thử lại!</div>
+    <input type="password" class="fld" id="pw" placeholder="Nhập mật khẩu quản trị" autocomplete="current-password">
+    <label class="chk"><input type="checkbox" id="remember" checked> Ghi nhớ đăng nhập trên máy này</label>
+    <button class="btn pri full" id="loginBtn">🔓 Đăng nhập hệ thống</button>
+  </div>
+</div>
+
+<!-- ==================== ỨNG DỤNG ==================== -->
+<div id="app" class="hide">
+<header>
+  <div class="hd">
+    <div class="logo">🧠</div>
+    <div>
+      <h1>QUẢN TRỊ KHO TRI THỨC AI</h1>
+      <div class="sub">IDECO Pharma • Đồng bộ realtime với Trợ lý Huyền</div>
+    </div>
+    <div class="sp"></div>
+    <div class="led" id="led"><span class="d"></span><span id="ledTxt">Đang kết nối…</span></div>
+    <button class="hbtn" id="logoutBtn">Đăng xuất</button>
+  </div>
+</header>
+
+<main>
+  <!-- ---------- CỘT TRÁI: FORM ---------- -->
+  <div class="sticky">
+    <div class="card">
+      <h3>📝 <span id="formTitle">Thêm mục tri thức</span></h3>
+      <div class="edt hide" id="editBadge">✏️ Đang sửa: <b id="editName"></b></div>
+
+      <label>Tiêu đề <span style="color:var(--dgr)">*</span></label>
+      <input class="fld" id="fTitle" placeholder="VD: Chính sách chiết khấu chuỗi nhà thuốc">
+
+      <label>Nội dung chi tiết <span style="color:var(--dgr)">*</span></label>
+      <textarea class="fld" id="fContent" placeholder="Nhập đầy đủ quy định, quy trình, số liệu…&#10;&#10;Trợ lý Huyền sẽ dò từ khóa trong Tiêu đề để tra cứu, nên hãy đặt tiêu đề chứa từ khóa người dùng hay hỏi."></textarea>
+      <div class="cc" id="cc">0 ký tự</div>
+
+      <div class="row">
+        <button class="btn pri" id="saveBtn" style="flex:1">💾 Lưu lên Firebase</button>
+        <button class="btn gh hide" id="cancelBtn">Hủy</button>
+      </div>
+
+      <div class="note">
+        Dữ liệu ghi trực tiếp vào Firebase Realtime Database, node
+        <b id="nodeName"></b>. Trợ lý Huyền trên website và ứng dụng AI Studio
+        sẽ nhận cập nhật <b>ngay tức thì</b>, không cần tải lại trang.
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>📥 Nhập &amp; Xuất dữ liệu</h3>
+      <div class="row">
+        <button class="btn gh" id="impTxtBtn" style="flex:1">📄 Nạp file .txt</button>
+        <button class="btn gh" id="impJsonBtn" style="flex:1">📦 Nhập JSON</button>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <button class="btn gh" id="expJsonBtn" style="flex:1">⬇ Xuất JSON</button>
+        <button class="btn gh" id="expXlsxBtn" style="flex:1">📊 Xuất Excel</button>
+      </div>
+      <input type="file" id="fileTxt" accept=".txt,.md,.csv,.log">
+      <input type="file" id="fileJson" accept=".json">
+      <div class="note">
+        Nạp .txt sẽ đưa nội dung vào ô soạn thảo (chưa lưu).
+        Nhập JSON sẽ <b>gộp thêm</b> vào kho hiện có, không ghi đè.
+      </div>
+    </div>
+  </div>
+
+  <!-- ---------- CỘT PHẢI: DANH SÁCH ---------- -->
+  <div>
+    <div class="card">
+      <div class="st">
+        <div><b id="sCount">0</b><span>MỤC TRI THỨC</span></div>
+        <div><b id="sChars">0</b><span>KÝ TỰ BỔ SUNG</span></div>
+        <div><b id="sBase">0</b><span>KÝ TỰ DỮ LIỆU GỐC</span></div>
+      </div>
+
+      <div class="tb">
+        <div class="srch">
+          <span class="ic">🔍</span>
+          <input id="search" placeholder="Tìm theo tiêu đề hoặc nội dung (không cần dấu)…">
+        </div>
+        <select class="fld" id="sortBy">
+          <option value="new">Mới nhất</option>
+          <option value="old">Cũ nhất</option>
+          <option value="az">Tiêu đề A→Z</option>
+          <option value="len">Nội dung dài nhất</option>
+        </select>
+      </div>
+
+      <h3>📚 Kho tri thức bổ sung <span class="cnt" id="listCnt">0 mục</span></h3>
+      <div id="list"></div>
+
+      <div class="row hide" id="bulkRow" style="margin-top:6px">
+        <button class="btn dg" id="delAllBtn">🗑 Xóa toàn bộ kho tri thức</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>ỨNG DỤNG ĐƯỢC PHÁT TRIỂN BỞI MTRIET</footer>
+</div>
+
+<!-- ==================== MODAL XÁC NHẬN ==================== -->
+<div class="mask" id="mask">
+  <div class="modal">
+    <div class="em" id="mEm">⚠️</div>
+    <h4 id="mTitle">Xác nhận</h4>
+    <p id="mMsg"></p>
+    <div class="row">
+      <button class="btn gh" id="mNo">Hủy bỏ</button>
+      <button class="btn dg" id="mYes">Xác nhận</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+/* ============================================================
+   CẤU HÌNH — trùng khớp với app AI Studio & script chatbot
+   ============================================================ */
+const CONFIG = {
+  FIREBASE: {
+    apiKey: "AIzaSyBS4vpfEOAgoFKKIij7BYUf5MrNytEvy2k",
+    authDomain: "minhtriet-bb978.firebaseapp.com",
+    databaseURL: "https://minhtriet-bb978-default-rtdb.firebaseio.com",
+    projectId: "minhtriet-bb978",
+    storageBucket: "minhtriet-bb978.firebasestorage.app",
+    messagingSenderId: "359715831590",
+    appId: "1:359715831590:web:ec62dc236227b3a4110be7"
+  },
+  KB_NODE: 'ideco_knowledge_base',
+  PASSWORDS: ['minhtriet1973'],
+  BASE_KB_CHARS: 31647,          // Số ký tự kho tri thức gốc (nhúng trong chatbot)
+  SOFT_LIMIT: 60000              // Ngưỡng cảnh báo tổng ký tự bổ sung
+};
+
+const LS_AUTH = 'ideco-kb-admin-auth';
+const LS_CACHE = 'ideco-kb-admin-cache';
+
+/* ============================================================
+   TIỆN ÍCH
+   ============================================================ */
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const stripVN = s => String(s).toLowerCase().normalize('NFD')
+  .replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d');
+const nfmt = n => Number(n).toLocaleString('vi-VN');
+
+let toastT;
+function toast(msg, type=''){
+  const t = $('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  clearTimeout(toastT);
+  toastT = setTimeout(()=> t.className = 'toast ' + type, 2600);
+}
+
+let confirmCb = null;
+function ask(title, msg, emoji='⚠️'){
+  $('mEm').textContent = emoji; $('mTitle').textContent = title; $('mMsg').innerHTML = msg;
+  $('mask').classList.add('show');
+  return new Promise(res => { confirmCb = res; });
+}
+$('mYes').onclick = () => { $('mask').classList.remove('show'); confirmCb && confirmCb(true); };
+$('mNo').onclick  = () => { $('mask').classList.remove('show'); confirmCb && confirmCb(false); };
+$('mask').onclick = e => { if (e.target === $('mask')) $('mNo').click(); };
+
+/* ============================================================
+   TRẠNG THÁI
+   ============================================================ */
+let items = [];        // [{id, title, content, updatedAt}]
+let editingId = null;
+let db = null, connected = false;
+
+/* ============================================================
+   ĐĂNG NHẬP
+   ============================================================ */
+function tryLogin(pw, remember){
+  if (!CONFIG.PASSWORDS.includes(pw)) return false;
+  if (remember) { try { localStorage.setItem(LS_AUTH, pw); } catch(e){} }
+  $('login').classList.add('hide');
+  $('app').classList.remove('hide');
+  startFirebase();
+  return true;
+}
+$('loginBtn').onclick = () => {
+  const pw = $('pw').value.trim();
+  if (!tryLogin(pw, $('remember').checked)) {
+    $('lerr').classList.add('show'); $('pw').value = ''; $('pw').focus();
+  }
+};
+$('pw').onkeydown = e => { if (e.key === 'Enter') $('loginBtn').click(); };
+$('logoutBtn').onclick = async () => {
+  if (await ask('Đăng xuất?', 'Bạn sẽ cần nhập lại mật khẩu để vào hệ thống.', '🚪')) {
+    try { localStorage.removeItem(LS_AUTH); } catch(e){}
+    location.reload();
+  }
+};
+
+/* ============================================================
+   FIREBASE
+   ============================================================ */
+function setLed(state, txt){
+  $('led').className = 'led ' + state;
+  $('ledTxt').textContent = txt;
+}
+
+function startFirebase(){
+  $('nodeName').textContent = CONFIG.KB_NODE;
+  $('sBase').textContent = nfmt(CONFIG.BASE_KB_CHARS);
+
+  // Cache cục bộ hiển thị ngay
+  try {
+    const c = localStorage.getItem(LS_CACHE);
+    if (c) { items = JSON.parse(c) || []; render(); }
+  } catch(e){}
+
+  try {
+    const app = initializeApp(CONFIG.FIREBASE);
+    db = getDatabase(app);
+    signInAnonymously(getAuth(app)).catch(()=>{});
+
+    onValue(ref(db, '.info/connected'), snap => {
+      connected = snap.val() === true;
+      setLed(connected ? 'on' : 'off',
+             connected ? 'Firebase realtime' : 'Mất kết nối');
+    });
+
+    onValue(ref(db, CONFIG.KB_NODE), snap => {
+      const data = snap.val();
+      let arr = [];
+      if (data) {
+        arr = Array.isArray(data) ? data : Object.values(data);
+        arr = arr.filter(Boolean).map((it, i) => typeof it === 'string'
+          ? { id:'k'+i, title:'Kiến thức chưa đặt tên', content:it }
+          : { id: it.id || ('k'+i), title: it.title || 'Kiến thức chưa đặt tên',
+              content: it.content || '', updatedAt: it.updatedAt || 0 });
+      }
+      items = arr;
+      try { localStorage.setItem(LS_CACHE, JSON.stringify(items)); } catch(e){}
+      render();
+    }, () => setLed('off','Lỗi đọc dữ liệu'));
+
+  } catch(e){
+    setLed('off','Không khởi tạo được Firebase');
+    toast('Lỗi Firebase: ' + e.message, 'err');
+  }
+}
+
+async function persist(msg){
+  try { localStorage.setItem(LS_CACHE, JSON.stringify(items)); } catch(e){}
+  if (!db) { toast('Chưa kết nối Firebase — chỉ lưu cục bộ', 'err'); render(); return; }
+  try {
+    await set(ref(db, CONFIG.KB_NODE), items);
+    toast(msg, 'ok');
+  } catch(e){
+    toast('Lỗi lưu Firebase: ' + e.message, 'err');
+  }
+  render();
+}
+
+/* ============================================================
+   FORM
+   ============================================================ */
+$('fContent').addEventListener('input', () => {
+  const n = $('fContent').value.length;
+  const cc = $('cc');
+  cc.textContent = nfmt(n) + ' ký tự';
+  cc.className = n > 30000 ? 'cc warn' : 'cc';
+});
+
+function resetForm(){
+  editingId = null;
+  $('fTitle').value = ''; $('fContent').value = '';
+  $('cc').textContent = '0 ký tự'; $('cc').className = 'cc';
+  $('formTitle').textContent = 'Thêm mục tri thức';
+  $('saveBtn').innerHTML = '💾 Lưu lên Firebase';
+  $('editBadge').classList.add('hide');
+  $('cancelBtn').classList.add('hide');
+  render();
+}
+$('cancelBtn').onclick = resetForm;
+
+function startEdit(id){
+  const it = items.find(x => x.id === id);
+  if (!it) return;
+  editingId = id;
+  $('fTitle').value = it.title;
+  $('fContent').value = it.content;
+  $('fContent').dispatchEvent(new Event('input'));
+  $('formTitle').textContent = 'Sửa mục tri thức';
+  $('saveBtn').innerHTML = '✅ Cập nhật lên Firebase';
+  $('editName').textContent = it.title;
+  $('editBadge').classList.remove('hide');
+  $('cancelBtn').classList.remove('hide');
+  render();
+  window.scrollTo({top:0, behavior:'smooth'});
+  $('fTitle').focus();
+}
+
+$('saveBtn').onclick = () => {
+  const t = $('fTitle').value.trim();
+  const c = $('fContent').value.trim();
+  if (!t)  { toast('Vui lòng nhập Tiêu đề', 'err'); $('fTitle').focus(); return; }
+  if (!c)  { toast('Vui lòng nhập Nội dung', 'err'); $('fContent').focus(); return; }
+
+  if (editingId) {
+    items = items.map(i => i.id === editingId
+      ? { ...i, title:t, content:c, updatedAt: Date.now() } : i);
+    persist('Đã cập nhật lên Firebase');
+  } else {
+    const dup = items.find(i => stripVN(i.title) === stripVN(t));
+    if (dup) { toast('Đã có mục trùng tiêu đề — hãy sửa mục đó thay vì thêm mới', 'err'); return; }
+    items.push({ id: 'kb' + Date.now() + Math.floor(Math.random()*999),
+                 title:t, content:c, updatedAt: Date.now() });
+    persist('Đã lưu lên Firebase');
+  }
+  resetForm();
+};
+
+/* ============================================================
+   DANH SÁCH
+   ============================================================ */
+function highlight(text, q){
+  if (!q) return esc(text);
+  const plain = stripVN(text), needle = stripVN(q);
+  let out = '', i = 0;
+  while (i < text.length) {
+    const idx = plain.indexOf(needle, i);
+    if (idx < 0) { out += esc(text.slice(i)); break; }
+    out += esc(text.slice(i, idx)) + '<mark>' + esc(text.slice(idx, idx+q.length)) + '</mark>';
+    i = idx + q.length;
+  }
+  return out;
+}
+
+function render(){
+  const q = $('search').value.trim();
+  const sort = $('sortBy').value;
+
+  let view = items.slice();
+  if (q) {
+    const nq = stripVN(q);
+    view = view.filter(i => stripVN(i.title).includes(nq) || stripVN(i.content).includes(nq));
+  }
+  if (sort === 'new')      view.sort((a,b) => (b.updatedAt||0) - (a.updatedAt||0));
+  else if (sort === 'old') view.sort((a,b) => (a.updatedAt||0) - (b.updatedAt||0));
+  else if (sort === 'az')  view.sort((a,b) => a.title.localeCompare(b.title, 'vi'));
+  else if (sort === 'len') view.sort((a,b) => b.content.length - a.content.length);
+
+  const totalChars = items.reduce((s,i) => s + i.content.length + i.title.length, 0);
+  $('sCount').textContent = items.length;
+  $('sChars').textContent = nfmt(totalChars);
+  $('listCnt').textContent = q ? `${view.length}/${items.length} mục` : `${items.length} mục`;
+  $('bulkRow').classList.toggle('hide', items.length === 0);
+
+  if (!view.length) {
+    $('list').innerHTML = items.length
+      ? `<div class="empty"><div class="em">🔍</div><p>Không tìm thấy mục nào khớp "<b>${esc(q)}</b>"</p></div>`
+      : `<div class="empty"><div class="em">📭</div><p>Kho tri thức bổ sung đang trống.<br>Thêm mục đầu tiên ở khung bên trái nhé!</p></div>`;
+    return;
+  }
+
+  $('list').innerHTML = view.map(it => {
+    const d = it.updatedAt ? new Date(it.updatedAt).toLocaleDateString('vi-VN') : '—';
+    return `<div class="item ${it.id === editingId ? 'act' : ''}">
+      <div class="hd2">
+        <div class="t">📌 ${highlight(it.title, q)}</div>
+        <div class="meta">${nfmt(it.content.length)} ký tự · ${d}</div>
+      </div>
+      <div class="c" data-c="${esc(it.id)}">${highlight(it.content, q)}</div>
+      <div class="ac">
+        <button class="btn gh sm" data-a="exp" data-i="${esc(it.id)}">Xem đầy đủ</button>
+        <button class="btn gh sm" data-a="edit" data-i="${esc(it.id)}">✏️ Sửa</button>
+        <button class="btn gh sm" data-a="copy" data-i="${esc(it.id)}">📋 Chép</button>
+        <button class="btn dg sm" data-a="del" data-i="${esc(it.id)}">🗑 Xóa</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+$('search').oninput = render;
+$('sortBy').onchange = render;
+
+$('list').addEventListener('click', async e => {
+  const b = e.target.closest('[data-a]');
+  if (!b) return;
+  const a = b.dataset.a, id = b.dataset.i;
+  const it = items.find(x => x.id === id);
+
+  if (a === 'exp') {
+    const c = $('list').querySelector(`[data-c="${id}"]`);
+    c.classList.toggle('open');
+    b.textContent = c.classList.contains('open') ? 'Thu gọn' : 'Xem đầy đủ';
+  }
+  if (a === 'edit') startEdit(id);
+  if (a === 'copy' && it) {
+    try { await navigator.clipboard.writeText(it.title + '\n\n' + it.content); toast('Đã chép nội dung', 'ok'); }
+    catch { toast('Trình duyệt chặn chép tự động', 'err'); }
+  }
+  if (a === 'del' && it) {
+    if (await ask('Xóa mục tri thức?',
+        `Mục "<b>${esc(it.title)}</b>" sẽ bị xóa khỏi Firebase và Trợ lý Huyền sẽ không còn tra cứu được. Hành động này không thể hoàn tác.`, '🗑')) {
+      items = items.filter(x => x.id !== id);
+      if (editingId === id) resetForm();
+      persist('Đã xóa khỏi Firebase');
+    }
+  }
+});
+
+$('delAllBtn').onclick = async () => {
+  if (await ask('XÓA TOÀN BỘ KHO TRI THỨC?',
+      `Toàn bộ <b>${items.length} mục</b> sẽ bị xóa vĩnh viễn khỏi Firebase.<br>Hãy Xuất JSON để sao lưu trước khi tiếp tục!`, '🚨')) {
+    items = []; resetForm(); persist('Đã xóa toàn bộ kho tri thức');
+  }
+};
+
+/* ============================================================
+   NHẬP / XUẤT
+   ============================================================ */
+$('impTxtBtn').onclick  = () => $('fileTxt').click();
+$('impJsonBtn').onclick = () => $('fileJson').click();
+
+$('fileTxt').onchange = e => {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    $('fContent').value = String(r.result).slice(0, 200000);
+    $('fContent').dispatchEvent(new Event('input'));
+    if (!$('fTitle').value) $('fTitle').value = f.name.replace(/\.[^.]+$/, '');
+    toast('Đã nạp nội dung — bấm Lưu để đưa lên Firebase', 'ok');
+  };
+  r.readAsText(f, 'UTF-8');
+  e.target.value = '';
+};
+
+$('fileJson').onchange = e => {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = async () => {
+    try {
+      const arr = JSON.parse(String(r.result));
+      if (!Array.isArray(arr)) throw new Error('File không phải mảng JSON');
+      const clean = arr.filter(x => x && x.title && x.content).map((x,i) => ({
+        id: 'im' + Date.now() + i, title: String(x.title), content: String(x.content),
+        updatedAt: x.updatedAt || Date.now()
+      }));
+      if (!clean.length) { toast('Không tìm thấy mục hợp lệ trong file', 'err'); return; }
+      if (await ask('Nhập dữ liệu?',
+          `Sẽ <b>gộp thêm ${clean.length} mục</b> vào kho hiện có (${items.length} mục). Không ghi đè dữ liệu cũ.`, '📦')) {
+        items = items.concat(clean);
+        persist(`Đã nhập ${clean.length} mục lên Firebase`);
+      }
+    } catch(err){ toast('File JSON không hợp lệ: ' + err.message, 'err'); }
+  };
+  r.readAsText(f, 'UTF-8');
+  e.target.value = '';
+};
+
+function download(blob, name){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 600);
+}
+
+$('expJsonBtn').onclick = () => {
+  if (!items.length) { toast('Kho tri thức đang trống', 'err'); return; }
+  const stamp = new Date().toISOString().slice(0,10);
+  download(new Blob([JSON.stringify(items, null, 2)], {type:'application/json'}),
+           `ideco-kho-tri-thuc-${stamp}.json`);
+  toast('Đã xuất file JSON', 'ok');
+};
+
+$('expXlsxBtn').onclick = () => {
+  if (!items.length) { toast('Kho tri thức đang trống', 'err'); return; }
+  const rows = items.map((i, n) => ({
+    'STT': n + 1,
+    'Tiêu đề': i.title,
+    'Nội dung': i.content,
+    'Số ký tự': i.content.length,
+    'Cập nhật': i.updatedAt ? new Date(i.updatedAt).toLocaleString('vi-VN') : ''
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [{wch:6},{wch:38},{wch:80},{wch:11},{wch:20}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Kho tri thuc');
+  const stamp = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, `ideco-kho-tri-thuc-${stamp}.xlsx`);
+  toast('Đã xuất file Excel', 'ok');
+};
+
+/* ============================================================
+   PHÍM TẮT & TỰ ĐĂNG NHẬP
+   ============================================================ */
+document.addEventListener('keydown', e => {
+  if ($('app').classList.contains('hide')) return;
+  if ((e.ctrlKey || e.metaKey) && e.key === 's'){ e.preventDefault(); $('saveBtn').click(); }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'f'){ e.preventDefault(); $('search').focus(); }
+  if (e.key === 'Escape' && editingId) resetForm();
+});
+
+try {
+  const saved = localStorage.getItem(LS_AUTH);
+  if (saved && CONFIG.PASSWORDS.includes(saved)) tryLogin(saved, false);
+  else $('pw').focus();
+} catch(e){ $('pw').focus(); }
+</script>
+</body>
+</html>
