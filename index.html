@@ -116,6 +116,7 @@ const CDN=['https://cdnjs.cloudflare.com/ajax/libs/','https://cdn.jsdelivr.net/n
 let items=[], filter='all', editId=null, busy=false, libCache={};
 let kbRawSnapshot=null, kbLoadedChars=0, kbLoadedCount=0;
 let speechRec=null, speechWanted=false, speechBase='', speechStart=0, speechEnd=0, speechFinal='', speechRestartTimer=null;
+ let speechSessionNo=0, speechSeenFinal=new Set(), speechRecentFinal=new Map();
 const $=s=>document.querySelector(s);
 const login=$('#login'), loginForm=$('#loginForm'), password=$('#password'), loginErr=$('#loginErr');
 const list=$('#list'), ttl=$('#ttl'), cnt=$('#cnt');
@@ -188,6 +189,18 @@ function speechCtor(){return window.SpeechRecognition||window.webkitSpeechRecogn
 function voiceStatus(msg,bad){const e=$('#voiceStat');if(!e)return;e.textContent=msg;e.style.color=bad?'#b91c1c':'#64748b'}
 function setVoiceUI(on){const b=$('#voiceBtn'),t=$('#voiceBtnText');if(!b)return;b.classList.toggle('on',!!on);b.setAttribute('aria-pressed',on?'true':'false');if(t)t.textContent=on?'Đang nghe… Bấm để dừng':'Nói để nhập văn bản'}
 function normalizeSpokenText(s){return String(s||'').replace(/\s+/g,' ').trim()}
+function spokenKey(s){return normalizeSpokenText(s).toLowerCase().replace(/[.,!?;:]+$/,'').trim()}
+function acceptFinalResult(resultIndex,tx){
+  const key=spokenKey(tx); if(!key)return false;
+  const localKey=speechSessionNo+'|'+resultIndex+'|'+key;
+  if(speechSeenFinal.has(localKey))return false;
+  speechSeenFinal.add(localKey);
+  const now=Date.now(), last=speechRecentFinal.get(key)||0;
+  for(const [k,t] of speechRecentFinal){if(now-t>4500)speechRecentFinal.delete(k)}
+  if(last && now-last<2200)return false;
+  speechRecentFinal.set(key,now);
+  return true;
+}
 function composeSpeechText(interim){
   const spoken=normalizeSpokenText((speechFinal+(interim?' '+interim:'')).trim());
   const before=speechBase.slice(0,speechStart), after=speechBase.slice(speechEnd);
@@ -213,15 +226,22 @@ function startSpeech(){
   if(!window.isSecureContext && location.protocol!=='file:'){
     voiceStatus('Micro trên Chrome Android cần trang HTTPS. Hãy mở ứng dụng từ địa chỉ https:// để dùng ổn định.',true);toast('Cần HTTPS để dùng micro ổn định');return
   }
-  speechWanted=true;speechBase=cnt.value;speechStart=cnt.selectionStart==null?cnt.value.length:cnt.selectionStart;speechEnd=cnt.selectionEnd==null?speechStart:cnt.selectionEnd;speechFinal='';
+  speechWanted=true;speechBase=cnt.value;speechStart=cnt.selectionStart==null?cnt.value.length:cnt.selectionStart;speechEnd=cnt.selectionEnd==null?speechStart:cnt.selectionEnd;speechFinal='';speechSessionNo++;speechSeenFinal.clear();speechRecentFinal.clear();
   speechRec=new C();speechRec.lang='vi-VN';speechRec.interimResults=true;speechRec.continuous=true;speechRec.maxAlternatives=1;
   speechRec.onstart=()=>{setVoiceUI(true);voiceStatus('Đang nghe tiếng Việt… Anh nói tự nhiên, có thể ngắt câu. Bấm micro lần nữa để dừng.')};
   speechRec.onresult=e=>{
     let interim='';
     for(let i=e.resultIndex;i<e.results.length;i++){
-      const tx=normalizeSpokenText(e.results[i][0]&&e.results[i][0].transcript);
+      const r=e.results[i];
+      const tx=normalizeSpokenText(r[0]&&r[0].transcript);
       if(!tx)continue;
-      if(e.results[i].isFinal){speechFinal+=(speechFinal?' ':'')+tx}else interim+=(interim?' ':'')+tx;
+      if(r.isFinal){
+        /* Android/Chrome có thể phát lại cùng final result, nhất là lúc tự nối phiên.
+           Chỉ nhận mỗi final một lần; đồng thời chặn bản lặp lại ngay sau restart. */
+        if(acceptFinalResult(i,tx)) speechFinal+=(speechFinal?' ':'')+tx;
+      }else{
+        interim+=(interim?' ':'')+tx;
+      }
     }
     applySpeechText(interim);
   };
@@ -240,7 +260,7 @@ function startSpeech(){
     if(speechWanted){
       speechRestartTimer=setTimeout(()=>{
         if(!speechWanted)return;
-        speechBase=cnt.value;speechStart=cnt.selectionStart==null?cnt.value.length:cnt.selectionStart;speechEnd=cnt.selectionEnd==null?speechStart:cnt.selectionEnd;speechFinal='';
+        speechBase=cnt.value;speechStart=cnt.selectionStart==null?cnt.value.length:cnt.selectionStart;speechEnd=cnt.selectionEnd==null?speechStart:cnt.selectionEnd;speechFinal='';speechSessionNo++;speechSeenFinal.clear();
         try{speechRec.start();setVoiceUI(true)}catch(err){voiceStatus('Chrome đã dừng phiên micro. Bấm micro để tiếp tục.',true);speechWanted=false;setVoiceUI(false)}
       },350);
     }
