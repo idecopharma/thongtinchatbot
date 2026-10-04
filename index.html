@@ -124,7 +124,8 @@ const CDN=['https://cdnjs.cloudflare.com/ajax/libs/','https://cdn.jsdelivr.net/n
 let items=[], filter='all', editId=null, busy=false, libCache={};
 let kbRawSnapshot=null, kbLoadedChars=0, kbLoadedCount=0;
 let speechRec=null, speechWanted=false, speechBase='', speechStart=0, speechEnd=0, speechFinal='', speechRestartTimer=null;
- let speechSessionNo=0, speechSeenFinal=new Set(), speechRecentFinal=new Map();
+let speechSessionNo=0, speechSeenFinal=new Set(), speechRecentFinal=new Map();
+let speechPendingInterim='', speechRestartGuardUntil=0;
 const $=s=>document.querySelector(s);
 const login=$('#login'), loginForm=$('#loginForm'), password=$('#password'), loginErr=$('#loginErr');
 const list=$('#list'), ttl=$('#ttl'), cnt=$('#cnt');
@@ -189,90 +190,176 @@ list.addEventListener('click',async e=>{
 });
 $('#modalClose').onclick=()=>$('#modal').classList.remove('on');$('#modal').onclick=e=>{if(e.target.id==='modal')$('#modal').classList.remove('on')};
 
-/* ===== NHẬP NỘI DUNG BẰNG GIỌNG NÓI - TỐI ƯU CHROME ANDROID =====
-   Dùng Web Speech API của Chrome. Chỉ khởi động sau thao tác bấm của người dùng
-   để Android hiện hộp xin quyền micro đúng chuẩn. Văn bản hoàn chỉnh được chèn
-   tại vị trí con trỏ, interim chỉ hiển thị tạm và không làm mất nội dung cũ. */
+/* ===== NHẬP NỘI DUNG BẰNG GIỌNG NÓI - CHỐNG LẶP CHROME ANDROID =====
+   Android/Chrome đôi khi trả lại final/interim cũ hoặc lặp phần đầu sau khi
+   SpeechRecognition tự kết thúc và khởi động lại. Bản vá này:
+   1) chỉ nhận mỗi final một lần;
+   2) ghép transcript theo phần từ trùng nhau thay vì cộng chuỗi thẳng;
+   3) bỏ phần interim chưa chốt trước khi restart;
+   4) chặn câu cũ bị phát lại ngay sau khi nối phiên. */
 function speechCtor(){return window.SpeechRecognition||window.webkitSpeechRecognition||null}
 function voiceStatus(msg,bad){const e=$('#voiceStat');if(!e)return;e.textContent=msg;e.style.color=bad?'#b91c1c':'#64748b'}
 function setVoiceUI(on){const b=$('#voiceBtn'),t=$('#voiceBtnText');if(!b)return;b.classList.toggle('on',!!on);b.setAttribute('aria-pressed',on?'true':'false');if(t)t.textContent=on?'Đang nghe… Bấm để dừng':'Nói để nhập văn bản'}
 function normalizeSpokenText(s){return String(s||'').replace(/\s+/g,' ').trim()}
 function spokenKey(s){return normalizeSpokenText(s).toLowerCase().replace(/[.,!?;:]+$/,'').trim()}
+function tokenKey(s){return spokenKey(s).replace(/[“”"'()\[\]{}]/g,'').split(/\s+/).filter(Boolean)}
+function sameTokens(a,b){return a.length===b.length&&a.every((x,i)=>x===b[i])}
+function overlapWordCount(left,right,maxWords){
+  const a=tokenKey(left), b=tokenKey(right), max=Math.min(a.length,b.length,maxWords||24);
+  for(let n=max;n>=2;n--){
+    if(sameTokens(a.slice(a.length-n),b.slice(0,n)))return n;
+  }
+  return 0;
+}
+function dropLeadingWords(text,count){
+  if(!count)return normalizeSpokenText(text);
+  const words=normalizeSpokenText(text).split(/\s+/);
+  return words.slice(Math.min(count,words.length)).join(' ').trim();
+}
+function mergeSpeechChunk(current,incoming){
+  current=normalizeSpokenText(current);incoming=normalizeSpokenText(incoming);
+  if(!incoming)return current;if(!current)return incoming;
+  const a=spokenKey(current),b=spokenKey(incoming);
+  if(!b||a===b||a.endsWith(' '+b))return current;
+  if(b.startsWith(a+' '))return incoming;
+  const ov=overlapWordCount(current,incoming,30);
+  if(ov>=2){
+    const rest=dropLeadingWords(incoming,ov);
+    return rest?normalizeSpokenText(current+' '+rest):current;
+  }
+  return normalizeSpokenText(current+' '+incoming);
+}
+function stripRestartReplay(tx){
+  tx=normalizeSpokenText(tx);
+  if(!tx||Date.now()>speechRestartGuardUntil)return tx;
+  const before=speechBase.slice(0,speechStart);
+  const ov=overlapWordCount(before,tx,30);
+  if(ov>=2)return dropLeadingWords(tx,ov);
+  const beforeKey=spokenKey(before),txKey=spokenKey(tx);
+  if(txKey&&beforeKey.endsWith(txKey))return '';
+  return tx;
+}
 function acceptFinalResult(resultIndex,tx){
-  const key=spokenKey(tx); if(!key)return false;
+  const key=spokenKey(tx);if(!key)return false;
   const localKey=speechSessionNo+'|'+resultIndex+'|'+key;
   if(speechSeenFinal.has(localKey))return false;
   speechSeenFinal.add(localKey);
-  const now=Date.now(), last=speechRecentFinal.get(key)||0;
-  for(const [k,t] of speechRecentFinal){if(now-t>4500)speechRecentFinal.delete(k)}
-  if(last && now-last<2200)return false;
+  const now=Date.now(),last=speechRecentFinal.get(key)||0;
+  for(const [k,t] of speechRecentFinal){if(now-t>8000)speechRecentFinal.delete(k)}
+  if(last&&now-last<3500)return false;
   speechRecentFinal.set(key,now);
   return true;
 }
 function composeSpeechText(interim){
-  const spoken=normalizeSpokenText((speechFinal+(interim?' '+interim:'')).trim());
-  const before=speechBase.slice(0,speechStart), after=speechBase.slice(speechEnd);
+  const spoken=mergeSpeechChunk(speechFinal,interim);
+  const before=speechBase.slice(0,speechStart),after=speechBase.slice(speechEnd);
   let insert=spoken;
-  if(insert && before && !/[\s\n]$/.test(before))insert=' '+insert;
-  if(insert && after && !/^[\s\n,.;:!?)]/.test(after))insert=insert+' ';
+  if(insert&&before&&!/[\s\n]$/.test(before))insert=' '+insert;
+  if(insert&&after&&!/^[\s\n,.;:!?)]/.test(after))insert=insert+' ';
   return before+insert+after;
 }
 function applySpeechText(interim){
   cnt.value=composeSpeechText(interim);
-  const caret=Math.min(cnt.value.length, speechStart+(cnt.value.length-speechBase.length)+(speechEnd-speechStart));
+  const caret=Math.min(cnt.value.length,speechStart+(cnt.value.length-speechBase.length)+(speechEnd-speechStart));
   try{cnt.setSelectionRange(caret,caret)}catch(e){}
   cnt.dispatchEvent(new Event('input',{bubbles:true}));
 }
 function stopSpeech(userStop){
   speechWanted=false;clearTimeout(speechRestartTimer);speechRestartTimer=null;
   if(speechRec){try{speechRec.stop()}catch(e){}}
-  setVoiceUI(false);if(userStop)voiceStatus('Đã dừng micro. Nội dung đã nhận vẫn được giữ trong ô văn bản.');
+  setVoiceUI(false);
+  if(userStop)voiceStatus('Đã dừng micro. Bản vá chống lặp đã giữ lại nội dung nhận được.');
 }
 function startSpeech(){
   const C=speechCtor();
   if(!C){voiceStatus('Trình duyệt này chưa hỗ trợ chuyển giọng nói thành văn bản. Hãy dùng Google Chrome mới nhất trên Android.',true);toast('Cần Chrome Android hỗ trợ Web Speech API');return}
-  if(!window.isSecureContext && location.protocol!=='file:'){
+  if(!window.isSecureContext&&location.protocol!=='file:'){
     voiceStatus('Micro trên Chrome Android cần trang HTTPS. Hãy mở ứng dụng từ địa chỉ https:// để dùng ổn định.',true);toast('Cần HTTPS để dùng micro ổn định');return
   }
-  speechWanted=true;speechBase=cnt.value;speechStart=cnt.selectionStart==null?cnt.value.length:cnt.selectionStart;speechEnd=cnt.selectionEnd==null?speechStart:cnt.selectionEnd;speechFinal='';speechSessionNo++;speechSeenFinal.clear();speechRecentFinal.clear();
-  speechRec=new C();speechRec.lang='vi-VN';speechRec.interimResults=true;speechRec.continuous=true;speechRec.maxAlternatives=1;
-  speechRec.onstart=()=>{setVoiceUI(true);voiceStatus('Đang nghe tiếng Việt… Anh nói tự nhiên, có thể ngắt câu. Bấm micro lần nữa để dừng.')};
+  speechWanted=true;
+  speechBase=cnt.value;
+  speechStart=cnt.selectionStart==null?cnt.value.length:cnt.selectionStart;
+  speechEnd=cnt.selectionEnd==null?speechStart:cnt.selectionEnd;
+  speechFinal='';speechPendingInterim='';speechRestartGuardUntil=0;
+  speechSessionNo++;speechSeenFinal.clear();speechRecentFinal.clear();
+
+  speechRec=new C();
+  speechRec.lang='vi-VN';
+  speechRec.interimResults=true;
+  speechRec.continuous=true;
+  speechRec.maxAlternatives=1;
+
+  speechRec.onstart=()=>{
+    setVoiceUI(true);
+    voiceStatus('Đang nghe tiếng Việt… Đã bật chống lặp câu trên Android. Anh nói tự nhiên và bấm micro lần nữa để dừng.');
+  };
+
   speechRec.onresult=e=>{
     let interim='';
     for(let i=e.resultIndex;i<e.results.length;i++){
       const r=e.results[i];
-      const tx=normalizeSpokenText(r[0]&&r[0].transcript);
+      let tx=normalizeSpokenText(r[0]&&r[0].transcript);
       if(!tx)continue;
       if(r.isFinal){
-        /* Android/Chrome có thể phát lại cùng final result, nhất là lúc tự nối phiên.
-           Chỉ nhận mỗi final một lần; đồng thời chặn bản lặp lại ngay sau restart. */
-        if(acceptFinalResult(i,tx)) speechFinal+=(speechFinal?' ':'')+tx;
+        if(!acceptFinalResult(i,tx))continue;
+        tx=stripRestartReplay(tx);
+        if(tx)speechFinal=mergeSpeechChunk(speechFinal,tx);
       }else{
-        interim+=(interim?' ':'')+tx;
+        interim=mergeSpeechChunk(interim,tx);
       }
     }
+    speechPendingInterim=interim;
     applySpeechText(interim);
   };
+
   speechRec.onerror=e=>{
     const code=String(e&&e.error||'');
-    if(code==='not-allowed'||code==='service-not-allowed'){speechWanted=false;setVoiceUI(false);voiceStatus('Chrome chưa được cấp quyền micro. Vào biểu tượng ổ khóa của trang → Quyền → Micro → Cho phép.',true)}
-    else if(code==='no-speech'){voiceStatus('Chưa nghe rõ giọng nói. Anh nói gần micro hơn; ứng dụng sẽ thử nghe lại nếu micro vẫn bật.')}
-    else if(code==='audio-capture'){speechWanted=false;setVoiceUI(false);voiceStatus('Không truy cập được micro. Kiểm tra quyền micro của Chrome Android.',true)}
-    else if(code!=='aborted'){voiceStatus('Nhận giọng nói gặp lỗi: '+code+'. Có thể bấm micro để thử lại.',true)}
-  };
-  speechRec.onend=()=>{
-    setVoiceUI(false);
-    /* Chrome Android thường tự đóng một phiên nhận dạng sau một khoảng ngắn.
-       Nếu người dùng chưa bấm dừng, tự nối lại phiên mới và lấy nội dung hiện tại
-       làm nền để không mất câu đã đọc. */
-    if(speechWanted){
-      speechRestartTimer=setTimeout(()=>{
-        if(!speechWanted)return;
-        speechBase=cnt.value;speechStart=cnt.selectionStart==null?cnt.value.length:cnt.selectionStart;speechEnd=cnt.selectionEnd==null?speechStart:cnt.selectionEnd;speechFinal='';speechSessionNo++;speechSeenFinal.clear();
-        try{speechRec.start();setVoiceUI(true)}catch(err){voiceStatus('Chrome đã dừng phiên micro. Bấm micro để tiếp tục.',true);speechWanted=false;setVoiceUI(false)}
-      },350);
+    if(code==='not-allowed'||code==='service-not-allowed'){
+      speechWanted=false;setVoiceUI(false);
+      voiceStatus('Chrome chưa được cấp quyền micro. Vào biểu tượng ổ khóa của trang → Quyền → Micro → Cho phép.',true);
+    }else if(code==='no-speech'){
+      voiceStatus('Chưa nghe rõ giọng nói. Anh nói gần micro hơn; ứng dụng sẽ tự nối phiên nếu micro vẫn bật.');
+    }else if(code==='audio-capture'){
+      speechWanted=false;setVoiceUI(false);
+      voiceStatus('Không truy cập được micro. Kiểm tra quyền micro của Chrome Android.',true);
+    }else if(code!=='aborted'){
+      voiceStatus('Nhận giọng nói gặp lỗi: '+code+'. Có thể bấm micro để thử lại.',true);
     }
   };
+
+  speechRec.onend=()=>{
+    setVoiceUI(false);
+
+    /* Rất quan trọng trên Android:
+       cnt.value có thể đang chứa INTERIM tạm. Nếu lấy thẳng nó làm speechBase cho
+       phiên kế tiếp thì Chrome phát lại câu đó và ứng dụng sẽ nhân đôi. Vì vậy
+       trước restart phải trả ô nhập về FINAL đã chốt, bỏ interim tạm. */
+    if(speechWanted){
+      speechPendingInterim='';
+      applySpeechText('');
+      speechRestartTimer=setTimeout(()=>{
+        if(!speechWanted)return;
+        speechBase=cnt.value;
+        speechStart=cnt.selectionStart==null?cnt.value.length:cnt.selectionStart;
+        speechEnd=cnt.selectionEnd==null?speechStart:cnt.selectionEnd;
+        speechFinal='';
+        speechPendingInterim='';
+        speechSessionNo++;
+        speechSeenFinal.clear();
+        /* Không xóa speechRecentFinal: cần nhớ câu vừa nhận để chống Chrome
+           phát lại cùng final ngay sau restart. */
+        speechRestartGuardUntil=Date.now()+3200;
+        try{
+          speechRec.start();
+          setVoiceUI(true);
+        }catch(err){
+          voiceStatus('Chrome đã dừng phiên micro. Bấm micro để tiếp tục.',true);
+          speechWanted=false;setVoiceUI(false);
+        }
+      },450);
+    }
+  };
+
   try{speechRec.start()}catch(err){speechWanted=false;setVoiceUI(false);voiceStatus('Không khởi động được micro: '+(err.message||err),true)}
 }
 $('#voiceBtn').onclick=()=>{if(speechWanted)stopSpeech(true);else startSpeech()};
